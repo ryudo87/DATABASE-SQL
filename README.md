@@ -1,3 +1,161 @@
+
+
+
+## Database
+### Relational database management system (RDBMS)
+
+**ACID** is a set of properties of relational database [transactions](https://en.wikipedia.org/wiki/Database_transaction).
+
+* **Atomicity** - Each transaction is all or nothing
+* **Consistency** - Any transaction will bring the database from one valid state to another
+* **Isolation** - **Executing transactions concurrently** has the same results as if the transactions were executed **serially**
+* **Durability** - Once a transaction has been committed, it will remain so
+
+There are many techniques to scale a relational database: **master-slave replication**, **master-master replication**, **federation**, **sharding**, **denormalization**, and **SQL tuning**.
+
+#### Master-slave replication
+
+The master serves **reads and writes**, replicating writes to one or more **slaves, which serve only reads**.  
+Slaves can also replicate to additional slaves in a tree-like fashion.  
+If the master goes offline, the system can continue to operate in read-only mode until **a slave is promoted** to a master or a new master is provisioned.
+
+<p align="center">
+  <img src="http://i.imgur.com/C9ioGtn.png"/>
+  <br/>
+  <i><a href=http://www.slideshare.net/jboner/scalability-availability-stability-patterns/>Source: Scalability, availability, stability, patterns</a></i>
+</p>
+
+##### Disadvantage(s): master-slave replication
+
+* Additional logic is needed to **promote a slave to a master**.
+* See [Disadvantage(s): replication](#disadvantages-replication) for points related to **both** master-slave and master-master.
+
+
+
+#### Master-master replication
+
+
+<p align="center">
+  <img src="http://i.imgur.com/krAHLGg.png"/>
+  <br/>
+  <i><a href=http://www.slideshare.net/jboner/scalability-availability-stability-patterns/>Source: Scalability, availability, stability, patterns</a></i>
+</p>
+
+##### Disadvantage(s): master-master replication
+
+* need a **load balancer** 
+* Most master-master systems are either **loosely consistent (violating ACID)** or have **increased write latency due to synchronization**.
+* See [Disadvantage(s): replication](#disadvantages-replication) for points related to **both** master-slave and master-master.
+
+##### Disadvantage(s): replication
+
+* There is a potential for **loss of data if the master fails before any newly written data** can be replicated to other nodes.
+* Writes are replayed to the read replicas.  If there are a lot of writes, the read replicas can get bogged down(阻塞) with replaying writes and can't do as many reads.
+* The more read slaves, the more you have to replicate, which leads to greater replication lag.
+
+
+##### Source(s) and further reading: replication
+
+* [Scalability, availability, stability, patterns](http://www.slideshare.net/jboner/scalability-availability-stability-patterns/)
+* [Multi-master replication](https://en.wikipedia.org/wiki/Multi-master_replication)
+
+
+
+#### Federation
+
+<p align="center">
+  <img src="http://i.imgur.com/U3qV33e.png"/>
+  <br/>
+  <i><a href=https://www.youtube.com/watch?v=w95murBkYmU>Source: Scaling up to your first 10 million users</a></i>
+</p>
+
+Federation (or functional partitioning) **splits up databases by function**.  Smaller databases result in more data that can fit in memory, which in turn results in more cache hits due to improved cache locality.  With no single central master serializing writes you can write in parallel, increasing throughput.
+
+##### Disadvantage(s): federation
+
+* not effective if your schema requires huge functions or tables.
+* application logic to determine which database to read and write.
+* **Joining** data from two databases is more complex with a [server link](http://stackoverflow.com/questions/5145637/querying-data-by-joining-two-tables-in-two-database-on-different-servers).
+
+
+#### Sharding
+
+<p align="center">
+  <img src="http://i.imgur.com/wU8x5Id.png"/>
+  <br/>
+  <i><a href=http://www.slideshare.net/jboner/scalability-availability-stability-patterns/>Source: Scalability, availability, stability, patterns</a></i>
+</p>
+
+Sharding distributes data **across different databases** such that each database can only manage a subset of the data.  
+
+
+Similar to the advantages of [federation](#federation), sharding results in 
+**less read and write traffic, less replication, and more cache hits.**  
+Index size is also reduced.  
+If one shard goes down, the other shards are still operational.  
+allowing you to **write in parallel with increased throughput**.
+
+
+##### Disadvantage(s): sharding
+
+*application logic to work with shards, **complex SQL queries**.
+* LOAD NOT BALANCED
+    * Rebalancing adds additional complexity.  A sharding function based on [consistent hashing](http://www.paperplanes.de/2011/12/9/the-magic-of-consistent-hashing.html) can reduce the amount of transferred data.
+* Joining data from multiple shards is more complex.
+
+
+#### Denormalization
+
+**Redundant copies of the data** are written in multiple tables to avoid expensive joins.  Some RDBMS such as [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL) support [materialized views](https://en.wikipedia.org/wiki/Materialized_view) which handle  storing redundant information and keeping redundant copies consistent.
+
+
+##### Disadvantage(s): denormalization
+
+* Data is duplicated.
+* redundant copies of information stay in sync, which increases complexity of the database design.
+* A denormalized database under **heavy write load** might perform worse than its normalized counterpart.
+
+
+#### SQL tuning
+
+It's important to **benchmark** and **profile** to simulate and uncover bottlenecks.
+
+* **Benchmark** - Simulate high-load situations with tools such as [ab](http://httpd.apache.org/docs/2.2/programs/ab.html).
+* **Profile** - Enable tools such as the [slow query log](http://dev.mysql.com/doc/refman/5.7/en/slow-query-log.html) to help track performance issues.
+
+
+
+
+##### Use good indices
+
+* Columns that you are querying (`SELECT`, `GROUP BY`, `ORDER BY`, `JOIN`) could be faster with indices.
+* Indices are usually represented as self-balancing [B-tree](https://en.wikipedia.org/wiki/B-tree) that keeps data sorted and allows searches, sequential access, insertions, and deletions in logarithmic time.
+* Placing an **index can keep the data in memory**, requiring more space.
+* Writes could also be slower since the index also needs to be updated.
+* When loading large amounts of data, it might be faster to disable indices, load the data, then rebuild the indices.
+
+
+##### Partition tables
+
+* Break up a table by putting hot spots in a separate table to help keep it in memory.
+
+##### Tune the query cache
+
+* In some cases, the [query cache](https://dev.mysql.com/doc/refman/5.7/en/query-cache.html) could lead to [performance issues](https://www.percona.com/blog/2016/10/12/mysql-5-7-performance-tuning-immediately-after-installation/).
+
+##### Source(s) and further reading: SQL tuning
+
+* [Tips for optimizing MySQL queries](http://aiddroid.com/10-tips-optimizing-mysql-queries-dont-suck/)
+* [Is there a good reason i see VARCHAR(255) used so often?](http://stackoverflow.com/questions/1217466/is-there-a-good-reason-i-see-varchar255-used-so-often-as-opposed-to-another-l)
+* [How do null values affect performance?](http://stackoverflow.com/questions/1017239/how-do-null-values-affect-performance-in-a-database-search)
+* [Slow query log](http://dev.mysql.com/doc/refman/5.7/en/slow-query-log.html)
+
+
+
+
+
+
+
 # Join
 
 **Nest Loop Join**算法虽然可以借助连接列索引，但是带来的随机读成本过大。
