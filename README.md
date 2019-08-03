@@ -184,3 +184,29 @@ The classic hash join algorithm for an inner join of two relations proceeds as f
 
 First prepare a hash table of the smaller relation. The hash table entries consist of the join attribute and its row. Because the hash table is accessed by applying a hash function to the join attribute, it will be much quicker to find a given join attribute's rows by using this table than by scanning the original relation.
 Once the hash table is built, scan the larger relation and find the relevant rows from the smaller relation by looking in the hash table.
+
+
+（二）索引是什么？有什么作用以及优缺点？
+
+索引是对数据库表中一或多个列的值进行排序的结构
+
+你也可以这样理解：索引就是加快检索表中数据的方法。在数据库中，索引也允许数据库程序迅速地找到表中的数据，而不必扫描整个数据库。
+
+MySQL数据库几个基本的索引类型：普通索引、唯一索引、主键索引、全文索引
+
+
+
+（三）什么是事务？
+
+事务（Transaction）是并发控制的基本单位。所谓的事务，它是一个操作序列，这些操作要么都执行，要么都不执行，它是一个不可分割的工作单位。事务是数据库维护数据一致性的单位，在每个事务结束时，都能保持数据一致性。
+
+
+（四）数据库的乐观锁和悲观锁是什么？
+
+数据库管理系统（DBMS）中的并发控制的任务是确保在多个事务同时存取数据库中同一数据时不破坏事务的隔离性和统一性以及数据库的统一性。
+
+乐观并发控制(乐观锁)和悲观并发控制（悲观锁）是并发控制主要采用的技术手段。
+
+悲观锁：假定会发生并发冲突，屏蔽一切可能违反数据完整性的操作
+乐观锁：假设不会发生并发冲突，只在提交操作时检查是否违反数据完整性。
+
