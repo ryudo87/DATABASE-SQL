@@ -1,8 +1,12 @@
+## Database Scalability
 
+### Indexing
+### De-normalization
 
+### DB Replication 
+**read-only replicas**  1 master/N slaves case, all update goes to master DB which send **a change log** to the replicas. However, there will be a **time lag** for replication.
 
-## Database
-### Relational database management system (RDBMS)
+## Relational database management system (RDBMS)
 
 **ACID** is a set of properties of relational database [transactions](https://en.wikipedia.org/wiki/Database_transaction).
 
