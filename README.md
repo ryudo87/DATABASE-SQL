@@ -4,7 +4,24 @@
 ### De-normalization
 
 ### DB Replication 
-**read-only replicas**  1 master/N slaves case, all update goes to master DB which send **a change log** to the replicas. However, there will be a **time lag** for replication.
+**read-only replicas**  1 master/N slaves case, all update goes to master DB which send **a change log** to the replicas. However, there 
+will be a **time lag** for replication.
+
+### Table Partitioning
+
+You can partition vertically or horizontally.
+
+Vertical partitioning is about putting different DB tables into different machines or moving some columns (rarely access attributes) to a different table.
+
+### Transaction Processing
+
+Avoid mixing OLAP (Online anylasis processing, query intensive) and OLTP(Online transaction processing, update intensive) operations within the same DB. 
+
+In the OLTP system, avoid using long running database transaction and choose the isolation level appropriately. 
+A typical technique is to use optimistic business transaction. 
+Under this scheme, a long running business transaction is executed outside a database transaction. 
+
+
 
 ## Relational database management system (RDBMS)
 
